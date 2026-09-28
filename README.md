@@ -68,9 +68,27 @@ chmod +x start.sh
 
 `http://10.37.70.152:41873/mcp`
 
+按照飞书文档中的架构，豆包工作负责 OAuth 2.0，MCP Server 不负责授权页和 code 换 token。豆包工作调用 MCP 时必须携带：
+
+```http
+Authorization: Bearer <feishu_user_access_token>
+```
+
+MCP Server 收到请求后，会调用：
+
+`GET https://open.feishu.cn/open-apis/authen/v1/user_info`
+
+验证 token，检查 `open_id`，如果配置了 `FEISHU_TENANT_KEY` 还会校验租户；未认证请求返回 401，不会跳转前端登录页。
+
 当前 MCP Demo 提供：
 
-- `feishu_validate_document_url`：调用方传入飞书文档 URL，校验 URL 格式
+- `feishu_get_current_user`：返回经过飞书 `user_info` 验证的当前用户身份
+
+豆包工作插件中的 OAuth 参数使用飞书固定端点：
+
+- Authorize：`https://accounts.feishu.cn/open-apis/authen/v1/authorize`
+- Token：`https://accounts.feishu.cn/oauth/v3/token`
+- UserInfo：`https://open.feishu.cn/open-apis/authen/v1/user_info`
 
 该端点使用标准 MCP Streamable HTTP，不是普通的业务 JSON API。实际读取飞书文档内容还需要接入飞书文档 API 和用户授权 token。
 

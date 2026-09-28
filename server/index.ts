@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import express, { type Request, type Response } from "express";
 import cookieParser from "cookie-parser";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { createMcpServer } from "./mcp.js";
+import { createMcpServer, type AuthenticatedFeishuUser } from "./mcp.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 41873);
@@ -15,6 +15,7 @@ const secureCookies = process.env.COOKIE_SECURE === "true";
 const feishuAuthorizeUrl = "https://accounts.feishu.cn/open-apis/authen/v1/authorize";
 const feishuTokenUrl = "https://accounts.feishu.cn/oauth/v3/token";
 const feishuUserInfoUrl = "https://open.feishu.cn/open-apis/authen/v1/user_info";
+const feishuTenantKey = process.env.FEISHU_TENANT_KEY;
 // Demo 使用内存保存 session；服务重启后登录状态会失效，生产环境应换成 Redis。
 const sessions = new Map<string, { user: FeishuUser; expiresAt: number }>();
 // [2] state 用于把 OAuth 回调和本次登录请求绑定，防止 CSRF。
@@ -33,9 +34,41 @@ type FeishuUser = {
 app.use(express.json());
 app.use(cookieParser());
 
+function mcpAuthError(res: Response, message: string, status = 401) {
+  return res.status(status)
+    .set("WWW-Authenticate", 'Bearer realm="mcp"')
+    .json({ error: "mcp_authentication_failed", message });
+}
+
+// 豆包工作负责 OAuth；MCP Server 只验证它转发过来的 user_access_token。
+async function authenticateMcp(req: Request, res: Response, next: express.NextFunction) {
+  const authorization = req.header("authorization");
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  if (!match) return mcpAuthError(res, "Missing Authorization: Bearer <user_access_token> header.");
+
+  try {
+    const userResponse = await fetch(feishuUserInfoUrl, {
+      headers: { Authorization: `Bearer ${match[1]}` },
+      signal: AbortSignal.timeout(10_000)
+    });
+    const userPayload = await userResponse.json() as { data?: AuthenticatedFeishuUser; msg?: string };
+    const user = userPayload.data;
+    if (!userResponse.ok || !user?.open_id) {
+      return mcpAuthError(res, "Feishu user_access_token is invalid or expired.");
+    }
+    if (feishuTenantKey && user.tenant_key !== feishuTenantKey) {
+      return mcpAuthError(res, "The Feishu user does not belong to the configured tenant.", 403);
+    }
+    res.locals.mcpUser = user;
+    return next();
+  } catch {
+    return mcpAuthError(res, "Unable to verify the Feishu token.", 503);
+  }
+}
+
 // MCP 客户端通过 Streamable HTTP 把 JSON-RPC 请求发送到这个端点。
-app.post("/mcp", async (req, res) => {
-  const mcpServer = createMcpServer();
+app.post("/mcp", authenticateMcp, async (req, res) => {
+  const mcpServer = createMcpServer(res.locals.mcpUser as AuthenticatedFeishuUser);
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true

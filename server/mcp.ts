@@ -1,30 +1,33 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-function isFeishuDocUrl(value: string) {
-  const url = new URL(value);
-  return url.protocol === "https:" &&
-    url.hostname === "feishu.doubao.com" &&
-    /^\/docx\/[^/]+$/.test(url.pathname);
-}
+export type AuthenticatedFeishuUser = {
+  name?: string;
+  en_name?: string;
+  avatar_url?: string;
+  open_id: string;
+  union_id?: string;
+  tenant_key?: string;
+  email?: string;
+};
 
-export function createMcpServer() {
+export function createMcpServer(user: AuthenticatedFeishuUser) {
   const server = new McpServer({
     name: "mcp-oauth-feishu-demo",
     version: "0.1.0"
   });
 
   server.registerTool(
-    "feishu_validate_document_url",
+    "feishu_get_current_user",
     {
-      title: "Validate Feishu Document URL",
-      description: "Validate that a URL matches the supported https://feishu.doubao.com/docx/<token> format.",
-      inputSchema: {
-        url: z.string().url().describe("Feishu document URL to validate")
-      },
+      title: "Get Current Feishu User",
+      description: "Return the Feishu identity verified from the Bearer token sent by the MCP client.",
+      inputSchema: {},
       outputSchema: {
-        url: z.string(),
-        valid: z.boolean()
+        open_id: z.string(),
+        name: z.string().optional(),
+        email: z.string().optional(),
+        tenant_key: z.string().optional()
       },
       annotations: {
         readOnlyHint: true,
@@ -33,18 +36,19 @@ export function createMcpServer() {
         openWorldHint: false
       }
     },
-    async ({ url }) => {
-      const valid = isFeishuDocUrl(url);
-      const output = { url, valid };
+    async () => {
+      const output = {
+        open_id: user.open_id,
+        ...(user.name ? { name: user.name } : {}),
+        ...(user.email ? { email: user.email } : {}),
+        ...(user.tenant_key ? { tenant_key: user.tenant_key } : {})
+      };
       return {
         content: [{
           type: "text",
-          text: valid
-            ? `Valid Feishu document URL: ${url}`
-            : "Invalid URL. Expected https://feishu.doubao.com/docx/<token>."
+          text: JSON.stringify(output, null, 2)
         }],
         structuredContent: output,
-        isError: !valid
       };
     }
   );
