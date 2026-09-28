@@ -92,6 +92,18 @@ MCP Server 收到请求后，会调用：
 
 该端点使用标准 MCP Streamable HTTP，不是普通的业务 JSON API。实际读取飞书文档内容还需要接入飞书文档 API 和用户授权 token。
 
+### MCP 排查日志
+
+服务会输出 JSON 格式日志，可按 `requestId` 串联一次请求：
+
+- `mcp.auth.started`：是否收到 Authorization 请求头
+- `mcp.feishu.user_info.completed`：飞书身份校验的 HTTP 状态和耗时
+- `mcp.auth.succeeded`：身份校验成功
+- `mcp.auth.failed`：缺少 token、token 无效或租户校验失败
+- `mcp.request.started` / `mcp.request.failed`：MCP JSON-RPC 请求处理状态
+
+日志不会输出 access token、App Secret 或 Cookie。
+
 当前 session 存储在内存中，仅适合本地测试。生产环境应替换为 Redis 或数据库，并使用 HTTPS。
 
 ## Docker
