@@ -45,8 +45,8 @@ if [[ -n "$existing_pids" ]]; then
   fi
 fi
 
-if [[ ! -d node_modules ]]; then
-  echo "首次启动，正在安装依赖..."
+if [[ ! -d node_modules || ! -f node_modules/.package-lock.json || package-lock.json -nt node_modules/.package-lock.json ]]; then
+  echo "正在同步 npm 依赖..."
   npm ci
 fi
 
