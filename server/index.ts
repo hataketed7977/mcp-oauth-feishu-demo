@@ -9,6 +9,7 @@ import { createMcpServer, type AuthenticatedFeishuUser } from "./mcp.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 41873);
+const host = process.env.HOST ?? "0.0.0.0";
 const frontendUrl = process.env.FRONTEND_URL ?? `http://localhost:5173`;
 // HTTP 局域网 Demo 必须关闭 Secure；切换到 HTTPS 域名时应设置 COOKIE_SECURE=true。
 const secureCookies = process.env.COOKIE_SECURE === "true";
@@ -30,9 +31,6 @@ type FeishuUser = {
   tenant_key?: string;
   email?: string;
 };
-
-app.use(express.json());
-app.use(cookieParser());
 
 type LogFields = Record<string, boolean | number | string | undefined>;
 
@@ -60,6 +58,9 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+app.use(express.json());
+app.use(cookieParser());
 
 function mcpAuthError(res: Response, message: string, status = 401) {
   log(status >= 500 ? "error" : "warn", "mcp.auth.failed", {
@@ -298,8 +299,9 @@ if (process.env.NODE_ENV === "production") {
   app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.resolve(currentDir, "../dist/index.html")));
 }
 
-app.listen(port, () => log("info", "server.started", {
+app.listen(port, host, () => log("info", "server.started", {
   port,
+  host,
   nodeEnv: process.env.NODE_ENV ?? "development",
   mcpPath: "/mcp",
   tenantValidation: Boolean(feishuTenantKey)
