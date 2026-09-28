@@ -8,6 +8,8 @@ import cookieParser from "cookie-parser";
 const app = express();
 const port = Number(process.env.PORT ?? 41873);
 const frontendUrl = process.env.FRONTEND_URL ?? `http://localhost:5173`;
+// HTTP 局域网 Demo 必须关闭 Secure；切换到 HTTPS 域名时应设置 COOKIE_SECURE=true。
+const secureCookies = process.env.COOKIE_SECURE === "true";
 const feishuAuthorizeUrl = "https://accounts.feishu.cn/open-apis/authen/v1/authorize";
 const feishuTokenUrl = "https://accounts.feishu.cn/oauth/v3/token";
 const feishuUserInfoUrl = "https://open.feishu.cn/open-apis/authen/v1/user_info";
@@ -108,7 +110,7 @@ app.get("/api/auth/feishu/callback", async (req, res) => {
     // [6] 不把 Feishu token 放到浏览器，服务端只下发随机 session id 的 HttpOnly Cookie。
     const sessionId = crypto.randomBytes(32).toString("hex");
     sessions.set(sessionId, { user: userPayload.data, expiresAt: Date.now() + 8 * 60 * 60 * 1000 });
-    res.cookie("oauth_session", sessionId, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 8 * 60 * 60 * 1000 });
+    res.cookie("oauth_session", sessionId, { httpOnly: true, sameSite: "lax", secure: secureCookies, maxAge: 8 * 60 * 60 * 1000 });
     return res.redirect(`${frontendUrl}/?login=success`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "OAuth 登录失败";

@@ -27,6 +27,7 @@ cp .env.example .env
 # 修改 .env：
 # FRONTEND_URL=http://localhost:41873
 # FEISHU_REDIRECT_URI=http://localhost:41873/api/auth/feishu/callback
+# COOKIE_SECURE=false
 npm run build
 NODE_ENV=production npm start
 ```
@@ -43,6 +44,8 @@ FEISHU_REDIRECT_URI=https://oauth.example.com/api/auth/feishu/callback
 ```
 
 然后用 Caddy、Nginx 或现有网关将 `oauth.example.com` 反向代理到 `127.0.0.1:41873`。OAuth 回调地址必须与飞书后台配置完全一致。
+
+使用 HTTPS 时将 `COOKIE_SECURE` 改为 `true`；通过 HTTP 局域网 IP 做 Demo 测试时保持 `false`。
 
 也可以直接使用启动脚本：
 
