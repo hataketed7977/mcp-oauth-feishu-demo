@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express, { type Request, type Response } from "express";
 import cookieParser from "cookie-parser";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createMcpServer } from "./mcp.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 41873);
@@ -30,6 +32,35 @@ type FeishuUser = {
 
 app.use(express.json());
 app.use(cookieParser());
+
+// MCP 客户端通过 Streamable HTTP 把 JSON-RPC 请求发送到这个端点。
+app.post("/mcp", async (req, res) => {
+  const mcpServer = createMcpServer();
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true
+  });
+  res.on("close", () => {
+    void transport.close();
+  });
+
+  try {
+    await mcpServer.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+    console.error("MCP request failed:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "MCP request failed" });
+    }
+  }
+});
+
+// 当前 Demo 使用无状态 JSON 响应；不提供独立的 SSE GET 流。
+app.get("/mcp", (_req, res) => {
+  res.status(405).set("Allow", "POST").json({
+    error: "MCP endpoint accepts POST JSON-RPC requests only"
+  });
+});
 
 function configError(res: Response) {
   return res.status(500).json({

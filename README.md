@@ -62,6 +62,18 @@ chmod +x start.sh
 - `POST /api/auth/logout` 注销当前 session
 - `GET /api/health` 健康检查
 
+## MCP 端点
+
+服务同时提供 Streamable HTTP MCP 端点：
+
+`http://10.37.70.152:41873/mcp`
+
+当前 MCP Demo 提供：
+
+- `feishu_validate_document_url`：调用方传入飞书文档 URL，校验 URL 格式
+
+该端点使用标准 MCP Streamable HTTP，不是普通的业务 JSON API。实际读取飞书文档内容还需要接入飞书文档 API 和用户授权 token。
+
 当前 session 存储在内存中，仅适合本地测试。生产环境应替换为 Redis 或数据库，并使用 HTTPS。
 
 ## Docker
