@@ -25,6 +25,9 @@ source .env
 set +a
 
 PORT="${PORT:-41873}"
+LOG_DIR="${LOG_DIR:-$ROOT_DIR/logs}"
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_DIR/mcp-oauth.log") 2>&1
 
 existing_pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
 if [[ -n "$existing_pids" ]]; then

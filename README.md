@@ -54,6 +54,12 @@ chmod +x start.sh
 ./start.sh
 ```
 
+启动脚本会同时把日志输出到终端和 `logs/mcp-oauth.log`，查看实时日志：
+
+```bash
+tail -f logs/mcp-oauth.log
+```
+
 ## 接口
 
 - `GET /api/auth/feishu` 发起登录
