@@ -10,6 +10,7 @@ function App() {
   const [error, setError] = useState(new URLSearchParams(location.search).get("error"));
 
   useEffect(() => {
+    // 页面加载后先向后端查询 session，决定显示登录按钮还是用户信息。
     fetch("/api/auth/session")
       .then((response) => response.json())
       .then((data) => setUser(data.user))
@@ -18,6 +19,7 @@ function App() {
   }, []);
 
   async function logout() {
+    // session 存在后端，前端退出时调用后端清除 Cookie 和内存 session。
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
   }
@@ -55,6 +57,7 @@ function App() {
             <h2>登录测试</h2>
             <p>使用飞书账号授权，完成一次真实的 OAuth 2.0 登录。</p>
             {error && <div className="error">{error}</div>}
+            {/* 浏览器跳转到后端，由后端生成 state 并重定向到飞书授权页。 */}
             <a className="login-button" href="/api/auth/feishu"><span>使用飞书登录</span><b>↗</b></a>
             <p className="privacy">授权后仅在本地创建测试会话<br />不会保存你的飞书密码</p>
           </div>

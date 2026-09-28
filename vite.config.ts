@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: frontendPort,
       proxy: {
+        // 开发时前端和后端端口不同，/api 请求由 Vite 转发到 Express。
         "/api": `http://localhost:${backendPort}`
       }
     }
