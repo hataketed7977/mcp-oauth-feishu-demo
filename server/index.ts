@@ -11,7 +11,7 @@ const frontendUrl = process.env.FRONTEND_URL ?? `http://localhost:5173`;
 const feishuAuthorizeUrl = "https://accounts.feishu.cn/open-apis/authen/v1/authorize";
 const feishuTokenUrl = "https://accounts.feishu.cn/oauth/v3/token";
 const feishuUserInfoUrl = "https://open.feishu.cn/open-apis/authen/v1/user_info";
-// 教程示例使用内存保存 session；服务重启后登录状态会失效，生产环境应换成 Redis。
+// Demo 使用内存保存 session；服务重启后登录状态会失效，生产环境应换成 Redis。
 const sessions = new Map<string, { user: FeishuUser; expiresAt: number }>();
 // state 用于把 OAuth 回调和本次登录请求绑定，防止 CSRF。
 const states = new Map<string, number>();
