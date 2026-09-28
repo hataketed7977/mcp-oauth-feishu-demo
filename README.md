@@ -11,7 +11,7 @@ cp .env.example .env
 npm run dev
 ```
 
-打开 http://localhost:5173。飞书应用后台的重定向 URL 需要配置为：
+开发模式打开 http://localhost:41872。飞书应用后台的重定向 URL 需要配置为：
 
 `http://localhost:41873/api/auth/feishu/callback`
 
