@@ -53,5 +53,7 @@ fi
 echo "正在构建生产版本..."
 npm run build
 
-echo "服务启动：http://localhost:${PORT}"
+FRONTEND_ADDRESS="${FRONTEND_URL:-http://localhost:${PORT}}"
+echo "前端地址：${FRONTEND_ADDRESS}"
+echo "后端健康检查：http://localhost:${PORT}/api/health"
 exec env NODE_ENV=production PORT="$PORT" npm start
