@@ -6,7 +6,7 @@ import express, { type Request, type Response } from "express";
 import cookieParser from "cookie-parser";
 
 const app = express();
-const port = Number(process.env.PORT ?? 3000);
+const port = Number(process.env.PORT ?? 41873);
 const frontendUrl = process.env.FRONTEND_URL ?? `http://localhost:5173`;
 const feishuAuthorizeUrl = "https://accounts.feishu.cn/open-apis/authen/v1/authorize";
 const feishuTokenUrl = "https://accounts.feishu.cn/oauth/v3/token";

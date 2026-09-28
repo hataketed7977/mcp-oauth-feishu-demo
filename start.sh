@@ -20,6 +20,31 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+set -a
+source .env
+set +a
+
+PORT="${PORT:-41873}"
+
+existing_pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+if [[ -n "$existing_pids" ]]; then
+  echo "发现端口 ${PORT} 已被占用，正在停止旧进程..."
+  kill $existing_pids 2>/dev/null || true
+
+  for _ in {1..20}; do
+    if ! lsof -tiTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.2
+  done
+
+  remaining_pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+  if [[ -n "$remaining_pids" ]]; then
+    echo "旧进程未退出，正在强制停止..."
+    kill -9 $remaining_pids 2>/dev/null || true
+  fi
+fi
+
 if [[ ! -d node_modules ]]; then
   echo "首次启动，正在安装依赖..."
   npm ci
@@ -28,5 +53,5 @@ fi
 echo "正在构建生产版本..."
 npm run build
 
-echo "服务启动：http://localhost:${PORT:-3000}"
-exec env NODE_ENV=production npm start
+echo "服务启动：http://localhost:${PORT}"
+exec env NODE_ENV=production PORT="$PORT" npm start

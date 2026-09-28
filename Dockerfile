@@ -11,7 +11,7 @@ RUN npm prune --omit=dev
 FROM node:22-alpine AS runtime
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=41873
 WORKDIR /app
 
 COPY --from=builder /app/package*.json ./
@@ -20,5 +20,5 @@ COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/dist ./dist
 
 USER node
-EXPOSE 3000
+EXPOSE 41873
 CMD ["node", "dist-server/index.js"]
