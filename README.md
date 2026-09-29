@@ -59,7 +59,7 @@ CADDY_DOMAIN=oauth.example.com
 然后启动：
 
 ```bash
-sudo ./start-https.sh
+sudo ./start.sh
 ```
 
 脚本会启动 Node 后端和 Caddy。Caddy 自动申请和续期证书，Node 只监听本机
@@ -90,14 +90,17 @@ CADDY_DOMAIN=10.37.70.152
 然后仍然执行：
 
 ```bash
-sudo ./start-https.sh
+sudo ./start.sh
 ```
 
 此时地址为 `https://10.37.70.152/mcp`。`./start.sh` 不会启动 Caddy，
 仍然是本机 HTTP 模式。
 
 也可以省略 `CADDY_DOMAIN`，脚本会默认使用 `10.37.70.152`。只有配置了
-真实域名时，Caddy 才会使用公网自动证书模式。
+真实域名并将 `CADDY_LAN=false` 时，Caddy 才会使用公网自动证书模式。
+
+`start.sh` 是唯一启动脚本，默认启动 Caddy HTTPS。如果只需要普通 HTTP，
+可在 `.env` 中设置 `CADDY_ENABLED=false`，此时访问 `http://localhost:41873`。
 
 也可以直接使用启动脚本：
 

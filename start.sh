@@ -24,8 +24,21 @@ set -a
 source .env
 set +a
 
-if [[ "${START_HTTPS:-}" == "1" ]]; then
-  : "${CADDY_DOMAIN:?START_HTTPS=1 时必须配置 CADDY_DOMAIN}"
+if [[ "${CADDY_ENABLED:-true}" == "true" ]] && ! command -v caddy >/dev/null 2>&1; then
+  echo "错误：CADDY_ENABLED=true，但未找到 Caddy，请先安装 Caddy，或设置 CADDY_ENABLED=false。" >&2
+  exit 1
+fi
+
+CADDY_ENABLED="${CADDY_ENABLED:-true}"
+CADDY_LAN="${CADDY_LAN:-true}"
+if [[ "$CADDY_ENABLED" == "true" ]]; then
+  if [[ "$CADDY_LAN" == "true" || -z "${CADDY_DOMAIN:-}" || "${CADDY_DOMAIN:-}" =~ ^[0-9.]+$ ]]; then
+    CADDY_DOMAIN="${CADDY_DOMAIN:-10.37.70.152}"
+    CADDY_CONFIG="$ROOT_DIR/Caddyfile.lan.example"
+  else
+    CADDY_CONFIG="$ROOT_DIR/Caddyfile"
+  fi
+  export CADDY_DOMAIN
   export FRONTEND_URL="https://${CADDY_DOMAIN}"
   export FEISHU_REDIRECT_URI="https://${CADDY_DOMAIN}/api/auth/feishu/callback"
   export COOKIE_SECURE=true
@@ -67,4 +80,18 @@ FRONTEND_ADDRESS="${FRONTEND_URL:-http://localhost:${PORT}}"
 echo "前端地址：${FRONTEND_ADDRESS}"
 echo "MCP 地址：${FRONTEND_ADDRESS}/mcp"
 echo "后端健康检查：${FRONTEND_ADDRESS}/api/health"
-exec env NODE_ENV=production PORT="$PORT" npm start
+
+if [[ "$CADDY_ENABLED" == "true" ]]; then
+  caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
+  env NODE_ENV=production PORT="$PORT" npm start &
+  backend_pid=$!
+  cleanup() {
+    kill "$backend_pid" 2>/dev/null || true
+  }
+  trap cleanup EXIT INT TERM
+  echo "Caddy 配置：${CADDY_CONFIG}"
+  echo "HTTPS MCP 地址：${FRONTEND_ADDRESS}/mcp"
+  exec caddy run --config "$CADDY_CONFIG" --adapter caddyfile
+else
+  exec env NODE_ENV=production PORT="$PORT" npm start
+fi
