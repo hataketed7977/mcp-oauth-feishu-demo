@@ -47,6 +47,39 @@ FEISHU_REDIRECT_URI=https://oauth.example.com/api/auth/feishu/callback
 
 使用 HTTPS 时将 `COOKIE_SECURE` 改为 `true`；通过 HTTP 局域网 IP 做 Demo 测试时保持 `false`。
 
+### 使用 Caddy 提供 HTTPS
+
+Caddy 配置在 [`Caddyfile`](./Caddyfile)。准备一个解析到开发机的域名，例如
+`oauth.example.com`，并确保防火墙允许 TCP `80` 和 `443`。在 `.env` 中配置：
+
+```env
+CADDY_DOMAIN=oauth.example.com
+```
+
+然后启动：
+
+```bash
+sudo ./start-https.sh
+```
+
+脚本会启动 Node 后端和 Caddy。Caddy 自动申请和续期证书，Node 只监听本机
+`41873`，外部只使用：
+
+```text
+https://oauth.example.com/mcp
+```
+
+脚本会自动将 OAuth 回调设置为：
+
+```text
+https://oauth.example.com/api/auth/feishu/callback
+```
+
+飞书后台和豆包 MCP 配置必须使用完全相同的 HTTPS 地址。若只在局域网用 IP
+测试，可参考 [`Caddyfile.lan.example`](./Caddyfile.lan.example)，但
+`tls internal` 证书需要在客户端安装并信任 Caddy 根证书，豆包环境通常不会信任，
+因此公网 HTTPS 域名更适合正式接入。
+
 也可以直接使用启动脚本：
 
 ```bash

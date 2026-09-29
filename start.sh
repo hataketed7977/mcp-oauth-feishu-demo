@@ -24,6 +24,13 @@ set -a
 source .env
 set +a
 
+if [[ "${START_HTTPS:-}" == "1" ]]; then
+  : "${CADDY_DOMAIN:?START_HTTPS=1 时必须配置 CADDY_DOMAIN}"
+  export FRONTEND_URL="https://${CADDY_DOMAIN}"
+  export FEISHU_REDIRECT_URI="https://${CADDY_DOMAIN}/api/auth/feishu/callback"
+  export COOKIE_SECURE=true
+fi
+
 PORT="${PORT:-41873}"
 LOG_DIR="${LOG_DIR:-$ROOT_DIR/logs}"
 mkdir -p "$LOG_DIR"
