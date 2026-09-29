@@ -82,6 +82,7 @@ FRONTEND_ADDRESS="${FRONTEND_URL:-http://${ACCESS_HOST}:${BACKEND_PORT}}"
 echo "前端地址：${FRONTEND_ADDRESS}"
 echo "MCP 地址：${FRONTEND_ADDRESS}/mcp"
 echo "后端健康检查：${FRONTEND_ADDRESS}/api/health"
+echo "Node 后端监听端口：${BACKEND_PORT}"
 
 if [[ "$HTTPS_ENABLED" == "true" ]]; then
   caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
@@ -92,6 +93,7 @@ if [[ "$HTTPS_ENABLED" == "true" ]]; then
   }
   trap cleanup EXIT INT TERM
   echo "Caddy 配置：${CADDY_CONFIG}"
+  echo "Caddy HTTPS 端口：443"
   echo "HTTPS MCP 地址：${FRONTEND_ADDRESS}/mcp"
   exec caddy run --config "$CADDY_CONFIG" --adapter caddyfile
 else

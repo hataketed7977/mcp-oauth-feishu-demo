@@ -95,6 +95,14 @@ Caddy 会使用公网自动证书模式。
 `start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。启用 HTTPS
 时只需要修改 `HTTPS_ENABLED=true` 和 `ACCESS_HOST`。
 
+启用 Caddy HTTPS 后，`BACKEND_PORT` 是 Node 的内部端口，Caddy 对外使用
+标准 HTTPS `443`，因此地址中的 `:443` 会被省略。例如：
+
+```text
+Node 内部：http://127.0.0.1:41873
+外部访问：https://localhost
+```
+
 也可以直接使用启动脚本：
 
 ```bash
