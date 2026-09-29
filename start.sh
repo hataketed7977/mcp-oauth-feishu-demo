@@ -104,6 +104,12 @@ echo "前端地址：${FRONTEND_ADDRESS}"
 echo "MCP 地址：${FRONTEND_ADDRESS}/mcp"
 echo "后端健康检查：${FRONTEND_ADDRESS}/api/health"
 echo "Node 后端监听端口：${BACKEND_PORT}"
+
+if caddy stop --address 127.0.0.1:2019 >/dev/null 2>&1; then
+  echo "发现旧 Caddy 进程，正在停止..."
+  sleep 1
+fi
+
 caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
 env NODE_ENV=production BACKEND_PORT="$BACKEND_PORT" npm start &
 backend_pid=$!
