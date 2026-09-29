@@ -1,5 +1,5 @@
 # CADDY_DOMAIN 必须是解析到这台开发机的域名。
 # 公网域名模式下 Caddy 会自动申请并续期 HTTPS 证书。
 {$CADDY_DOMAIN} {
-	reverse_proxy 127.0.0.1:41873
+	reverse_proxy 127.0.0.1:{$BACKEND_PORT}
 }

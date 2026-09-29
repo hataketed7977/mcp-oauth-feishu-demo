@@ -25,24 +25,31 @@ source .env
 set +a
 
 BACKEND_PORT="${BACKEND_PORT:-41873}"
+FRONTEND_PORT="${FRONTEND_PORT:-41872}"
+export BACKEND_PORT FRONTEND_PORT
 HTTPS_ENABLED="${HTTPS_ENABLED:-false}"
 ACCESS_HOST="${ACCESS_HOST:-localhost}"
+if ! command -v caddy >/dev/null 2>&1; then
+  echo "错误：启动脚本需要 Caddy，请先安装 Caddy。" >&2
+  exit 1
+fi
+
+export CADDY_DOMAIN="$ACCESS_HOST"
+export FRONTEND_PORT
 if [[ "$HTTPS_ENABLED" == "true" ]]; then
-  if ! command -v caddy >/dev/null 2>&1; then
-    echo "错误：HTTPS_ENABLED=true，但未找到 Caddy，请先安装 Caddy。" >&2
-    exit 1
-  fi
-  export CADDY_DOMAIN="$ACCESS_HOST"
-  if [[ "$ACCESS_HOST" =~ ^[0-9.]+$ || "$ACCESS_HOST" == "localhost" ]]; then
-    CADDY_CONFIG="$ROOT_DIR/Caddyfile.lan.example"
-  else
-    CADDY_CONFIG="$ROOT_DIR/Caddyfile"
-  fi
   export FRONTEND_URL="https://${ACCESS_HOST}"
   export FEISHU_REDIRECT_URI="https://${ACCESS_HOST}/api/auth/feishu/callback"
   export COOKIE_SECURE=true
+  if [[ "$ACCESS_HOST" =~ ^[0-9.]+$ || "$ACCESS_HOST" == "localhost" ]]; then
+    CADDY_CONFIG="$ROOT_DIR/Caddyfile.lan.example"
+    export FRONTEND_URL="https://${ACCESS_HOST}:${FRONTEND_PORT}"
+    export FEISHU_REDIRECT_URI="${FRONTEND_URL}/api/auth/feishu/callback"
+  else
+    CADDY_CONFIG="$ROOT_DIR/Caddyfile"
+  fi
 else
-  export FRONTEND_URL="http://${ACCESS_HOST}:${BACKEND_PORT}"
+  CADDY_CONFIG="$ROOT_DIR/Caddyfile.http.example"
+  export FRONTEND_URL="http://${ACCESS_HOST}:${FRONTEND_PORT}"
   export FEISHU_REDIRECT_URI="${FRONTEND_URL}/api/auth/feishu/callback"
   export COOKIE_SECURE=false
 fi
@@ -83,19 +90,14 @@ echo "前端地址：${FRONTEND_ADDRESS}"
 echo "MCP 地址：${FRONTEND_ADDRESS}/mcp"
 echo "后端健康检查：${FRONTEND_ADDRESS}/api/health"
 echo "Node 后端监听端口：${BACKEND_PORT}"
-
-if [[ "$HTTPS_ENABLED" == "true" ]]; then
-  caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
-  env NODE_ENV=production BACKEND_PORT="$BACKEND_PORT" npm start &
-  backend_pid=$!
-  cleanup() {
-    kill "$backend_pid" 2>/dev/null || true
-  }
-  trap cleanup EXIT INT TERM
-  echo "Caddy 配置：${CADDY_CONFIG}"
-  echo "Caddy HTTPS 端口：443"
-  echo "HTTPS MCP 地址：${FRONTEND_ADDRESS}/mcp"
-  exec caddy run --config "$CADDY_CONFIG" --adapter caddyfile
-else
-  exec env NODE_ENV=production BACKEND_PORT="$BACKEND_PORT" npm start
-fi
+caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
+env NODE_ENV=production BACKEND_PORT="$BACKEND_PORT" npm start &
+backend_pid=$!
+cleanup() {
+  kill "$backend_pid" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+echo "Caddy 配置：${CADDY_CONFIG}"
+echo "Node 后端地址：http://127.0.0.1:${BACKEND_PORT}"
+echo "前端入口端口：${FRONTEND_PORT}"
+exec caddy run --config "$CADDY_CONFIG" --adapter caddyfile

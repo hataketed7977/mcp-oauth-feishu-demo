@@ -1,0 +1,4 @@
+# HTTP 前端入口，统一代理到 Node 后端。
+http://{$CADDY_DOMAIN}:{$FRONTEND_PORT} {
+	reverse_proxy 127.0.0.1:{$BACKEND_PORT}
+}

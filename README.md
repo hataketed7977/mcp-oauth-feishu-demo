@@ -31,9 +31,9 @@ npm run build
 NODE_ENV=production npm start
 ```
 
-此时访问 `http://localhost:41873`。飞书后台的回调地址也配置为：
+此时访问 `http://localhost:41872`。飞书后台的回调地址也配置为：
 
-`http://localhost:41873/api/auth/feishu/callback`
+`http://localhost:41872/api/auth/feishu/callback`
 
 如果需要让其他机器访问，使用 `HTTPS_ENABLED=true`，并将 `ACCESS_HOST`
 设置为解析到开发机的域名或局域网 IP。启动脚本会根据这两个配置自动生成
@@ -56,7 +56,7 @@ sudo ./start.sh
 ```
 
 脚本会启动 Node 后端和 Caddy。Caddy 自动申请和续期证书，Node 只监听本机
-`41873`，外部只使用：
+`41873`，外部前端入口使用：
 
 ```text
 https://oauth.example.com/mcp
@@ -86,8 +86,7 @@ HTTPS_ENABLED=true
 sudo ./start.sh
 ```
 
-此时地址为 `https://10.37.70.152/mcp`。`./start.sh` 不会启动 Caddy，
-仍然是本机 HTTP 模式。
+此时地址为 `https://10.37.70.152:41872/mcp`。
 
 公网域名模式只需要把 `ACCESS_HOST` 改成域名，并保持 `HTTPS_ENABLED=true`，
 Caddy 会使用公网自动证书模式。
@@ -95,12 +94,12 @@ Caddy 会使用公网自动证书模式。
 `start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。启用 HTTPS
 时只需要修改 `HTTPS_ENABLED=true` 和 `ACCESS_HOST`。
 
-启用 Caddy HTTPS 后，`BACKEND_PORT` 是 Node 的内部端口，Caddy 对外使用
-标准 HTTPS `443`，因此地址中的 `:443` 会被省略。例如：
+局域网 HTTPS 使用 `FRONTEND_PORT`，公网域名模式使用标准 HTTPS `443`。
+例如局域网模式：
 
 ```text
 Node 内部：http://127.0.0.1:41873
-外部访问：https://localhost
+外部访问：https://localhost:41872
 ```
 
 也可以直接使用启动脚本：
@@ -128,7 +127,7 @@ tail -f logs/mcp-oauth.log
 
 服务同时提供 Streamable HTTP MCP 端点：
 
-`http://10.37.70.152:41873/mcp`
+`http://10.37.70.152:41872/mcp`
 
 按照飞书文档中的架构，豆包工作负责 OAuth 2.0，MCP Server 不负责授权页和 code 换 token。豆包工作调用 MCP 时必须携带：
 
