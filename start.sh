@@ -24,25 +24,25 @@ set -a
 source .env
 set +a
 
-PORT="${PORT:-41873}"
+BACKEND_PORT="${BACKEND_PORT:-41873}"
 HTTPS_ENABLED="${HTTPS_ENABLED:-false}"
-PUBLIC_HOST="${PUBLIC_HOST:-localhost}"
+ACCESS_HOST="${ACCESS_HOST:-localhost}"
 if [[ "$HTTPS_ENABLED" == "true" ]]; then
   if ! command -v caddy >/dev/null 2>&1; then
     echo "错误：HTTPS_ENABLED=true，但未找到 Caddy，请先安装 Caddy。" >&2
     exit 1
   fi
-  export CADDY_DOMAIN="$PUBLIC_HOST"
-  if [[ "$PUBLIC_HOST" =~ ^[0-9.]+$ || "$PUBLIC_HOST" == "localhost" ]]; then
+  export CADDY_DOMAIN="$ACCESS_HOST"
+  if [[ "$ACCESS_HOST" =~ ^[0-9.]+$ || "$ACCESS_HOST" == "localhost" ]]; then
     CADDY_CONFIG="$ROOT_DIR/Caddyfile.lan.example"
   else
     CADDY_CONFIG="$ROOT_DIR/Caddyfile"
   fi
-  export FRONTEND_URL="https://${PUBLIC_HOST}"
-  export FEISHU_REDIRECT_URI="https://${PUBLIC_HOST}/api/auth/feishu/callback"
+  export FRONTEND_URL="https://${ACCESS_HOST}"
+  export FEISHU_REDIRECT_URI="https://${ACCESS_HOST}/api/auth/feishu/callback"
   export COOKIE_SECURE=true
 else
-  export FRONTEND_URL="http://${PUBLIC_HOST}:${PORT:-41873}"
+  export FRONTEND_URL="http://${ACCESS_HOST}:${BACKEND_PORT}"
   export FEISHU_REDIRECT_URI="${FRONTEND_URL}/api/auth/feishu/callback"
   export COOKIE_SECURE=false
 fi
@@ -51,19 +51,19 @@ LOG_DIR="${LOG_DIR:-$ROOT_DIR/logs}"
 mkdir -p "$LOG_DIR"
 exec > >(tee -a "$LOG_DIR/mcp-oauth.log") 2>&1
 
-existing_pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+existing_pids="$(lsof -tiTCP:"$BACKEND_PORT" -sTCP:LISTEN 2>/dev/null || true)"
 if [[ -n "$existing_pids" ]]; then
-  echo "发现端口 ${PORT} 已被占用，正在停止旧进程..."
+  echo "发现后端端口 ${BACKEND_PORT} 已被占用，正在停止旧进程..."
   kill $existing_pids 2>/dev/null || true
 
   for _ in {1..20}; do
-    if ! lsof -tiTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    if ! lsof -tiTCP:"$BACKEND_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
       break
     fi
     sleep 0.2
   done
 
-  remaining_pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+  remaining_pids="$(lsof -tiTCP:"$BACKEND_PORT" -sTCP:LISTEN 2>/dev/null || true)"
   if [[ -n "$remaining_pids" ]]; then
     echo "旧进程未退出，正在强制停止..."
     kill -9 $remaining_pids 2>/dev/null || true
@@ -78,14 +78,14 @@ fi
 echo "正在构建生产版本..."
 npm run build
 
-FRONTEND_ADDRESS="${FRONTEND_URL:-http://localhost:${PORT}}"
+FRONTEND_ADDRESS="${FRONTEND_URL:-http://${ACCESS_HOST}:${BACKEND_PORT}}"
 echo "前端地址：${FRONTEND_ADDRESS}"
 echo "MCP 地址：${FRONTEND_ADDRESS}/mcp"
 echo "后端健康检查：${FRONTEND_ADDRESS}/api/health"
 
 if [[ "$HTTPS_ENABLED" == "true" ]]; then
   caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
-  env NODE_ENV=production PORT="$PORT" npm start &
+  env NODE_ENV=production BACKEND_PORT="$BACKEND_PORT" npm start &
   backend_pid=$!
   cleanup() {
     kill "$backend_pid" 2>/dev/null || true
@@ -95,5 +95,5 @@ if [[ "$HTTPS_ENABLED" == "true" ]]; then
   echo "HTTPS MCP 地址：${FRONTEND_ADDRESS}/mcp"
   exec caddy run --config "$CADDY_CONFIG" --adapter caddyfile
 else
-  exec env NODE_ENV=production PORT="$PORT" npm start
+  exec env NODE_ENV=production BACKEND_PORT="$BACKEND_PORT" npm start
 fi

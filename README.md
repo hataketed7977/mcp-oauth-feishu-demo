@@ -25,7 +25,7 @@ npm run dev
 npm ci
 cp .env.example .env
 # 修改 .env：
-# PUBLIC_HOST=localhost
+# ACCESS_HOST=localhost
 # HTTPS_ENABLED=false
 npm run build
 NODE_ENV=production npm start
@@ -35,7 +35,7 @@ NODE_ENV=production npm start
 
 `http://localhost:41873/api/auth/feishu/callback`
 
-如果需要让其他机器访问，使用 `HTTPS_ENABLED=true`，并将 `PUBLIC_HOST`
+如果需要让其他机器访问，使用 `HTTPS_ENABLED=true`，并将 `ACCESS_HOST`
 设置为解析到开发机的域名或局域网 IP。启动脚本会根据这两个配置自动生成
 前端地址和 OAuth 回调地址。
 
@@ -45,7 +45,7 @@ Caddy 配置在 [`Caddyfile`](./Caddyfile)。准备一个解析到开发机的�
 `oauth.example.com`，并确保防火墙允许 TCP `80` 和 `443`。在 `.env` 中配置：
 
 ```env
-PUBLIC_HOST=oauth.example.com
+ACCESS_HOST=oauth.example.com
 HTTPS_ENABLED=true
 ```
 
@@ -76,7 +76,7 @@ https://oauth.example.com/api/auth/feishu/callback
 局域网 IP 测试只需要配置：
 
 ```env
-PUBLIC_HOST=10.37.70.152
+ACCESS_HOST=10.37.70.152
 HTTPS_ENABLED=true
 ```
 
@@ -89,11 +89,11 @@ sudo ./start.sh
 此时地址为 `https://10.37.70.152/mcp`。`./start.sh` 不会启动 Caddy，
 仍然是本机 HTTP 模式。
 
-公网域名模式只需要把 `PUBLIC_HOST` 改成域名，并保持 `HTTPS_ENABLED=true`，
+公网域名模式只需要把 `ACCESS_HOST` 改成域名，并保持 `HTTPS_ENABLED=true`，
 Caddy 会使用公网自动证书模式。
 
 `start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。启用 HTTPS
-时只需要修改 `HTTPS_ENABLED=true` 和 `PUBLIC_HOST`。
+时只需要修改 `HTTPS_ENABLED=true` 和 `ACCESS_HOST`。
 
 也可以直接使用启动脚本：
 

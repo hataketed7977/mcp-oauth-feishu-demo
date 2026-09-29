@@ -8,8 +8,8 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { createMcpServer, type AuthenticatedFeishuUser } from "./mcp.js";
 
 const app = express();
-const port = Number(process.env.PORT ?? 41873);
-const host = process.env.HOST ?? "0.0.0.0";
+const port = Number(process.env.BACKEND_PORT ?? 41873);
+const host = "0.0.0.0";
 const frontendUrl = process.env.FRONTEND_URL ?? `http://localhost:5173`;
 // HTTP 局域网 Demo 必须关闭 Secure；切换到 HTTPS 域名时应设置 COOKIE_SECURE=true。
 const secureCookies = process.env.COOKIE_SECURE === "true";

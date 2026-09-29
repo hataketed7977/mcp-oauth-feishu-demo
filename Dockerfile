@@ -11,7 +11,7 @@ RUN npm prune --omit=dev
 FROM node:22-alpine AS runtime
 
 ENV NODE_ENV=production
-ENV PORT=41873
+ENV BACKEND_PORT=41873
 WORKDIR /app
 
 COPY --from=builder /app/package*.json ./
