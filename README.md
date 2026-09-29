@@ -99,8 +99,9 @@ sudo ./start.sh
 也可以省略 `CADDY_DOMAIN`，脚本会默认使用 `10.37.70.152`。只有配置了
 真实域名并将 `CADDY_LAN=false` 时，Caddy 才会使用公网自动证书模式。
 
-`start.sh` 是唯一启动脚本，默认启动 Caddy HTTPS。如果只需要普通 HTTP，
-可在 `.env` 中设置 `CADDY_ENABLED=false`，此时访问 `http://localhost:41873`。
+`start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。需要 HTTPS
+时将 `CADDY_ENABLED=true`，同时把 `.env` 中的 `FRONTEND_URL`、
+`FEISHU_REDIRECT_URI` 改成 `https://`，并设置 `COOKIE_SECURE=true`。
 
 也可以直接使用启动脚本：
 

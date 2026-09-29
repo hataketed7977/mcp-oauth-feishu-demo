@@ -24,13 +24,13 @@ set -a
 source .env
 set +a
 
-if [[ "${CADDY_ENABLED:-true}" == "true" ]] && ! command -v caddy >/dev/null 2>&1; then
+if [[ "${CADDY_ENABLED:-false}" == "true" ]] && ! command -v caddy >/dev/null 2>&1; then
   echo "错误：CADDY_ENABLED=true，但未找到 Caddy，请先安装 Caddy，或设置 CADDY_ENABLED=false。" >&2
   exit 1
 fi
 
-CADDY_ENABLED="${CADDY_ENABLED:-true}"
-CADDY_LAN="${CADDY_LAN:-true}"
+CADDY_ENABLED="${CADDY_ENABLED:-false}"
+CADDY_LAN="${CADDY_LAN:-false}"
 if [[ "$CADDY_ENABLED" == "true" ]]; then
   if [[ "$CADDY_LAN" == "true" || -z "${CADDY_DOMAIN:-}" || "${CADDY_DOMAIN:-}" =~ ^[0-9.]+$ ]]; then
     CADDY_DOMAIN="${CADDY_DOMAIN:-10.37.70.152}"
@@ -39,9 +39,10 @@ if [[ "$CADDY_ENABLED" == "true" ]]; then
     CADDY_CONFIG="$ROOT_DIR/Caddyfile"
   fi
   export CADDY_DOMAIN
-  export FRONTEND_URL="https://${CADDY_DOMAIN}"
-  export FEISHU_REDIRECT_URI="https://${CADDY_DOMAIN}/api/auth/feishu/callback"
-  export COOKIE_SECURE=true
+  if [[ "${FRONTEND_URL:-}" != https://* || "${FEISHU_REDIRECT_URI:-}" != https://* || "${COOKIE_SECURE:-false}" != "true" ]]; then
+    echo "错误：启用 Caddy HTTPS 时，请在 .env 中配置 FRONTEND_URL、FEISHU_REDIRECT_URI 为 https://，并设置 COOKIE_SECURE=true。" >&2
+    exit 1
+  fi
 fi
 
 PORT="${PORT:-41873}"
