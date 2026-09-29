@@ -24,28 +24,29 @@ set -a
 source .env
 set +a
 
-if [[ "${CADDY_ENABLED:-false}" == "true" ]] && ! command -v caddy >/dev/null 2>&1; then
-  echo "错误：CADDY_ENABLED=true，但未找到 Caddy，请先安装 Caddy，或设置 CADDY_ENABLED=false。" >&2
-  exit 1
-fi
-
-CADDY_ENABLED="${CADDY_ENABLED:-false}"
-CADDY_LAN="${CADDY_LAN:-false}"
-if [[ "$CADDY_ENABLED" == "true" ]]; then
-  if [[ "$CADDY_LAN" == "true" || -z "${CADDY_DOMAIN:-}" || "${CADDY_DOMAIN:-}" =~ ^[0-9.]+$ ]]; then
-    CADDY_DOMAIN="${CADDY_DOMAIN:-10.37.70.152}"
+PORT="${PORT:-41873}"
+HTTPS_ENABLED="${HTTPS_ENABLED:-false}"
+PUBLIC_HOST="${PUBLIC_HOST:-localhost}"
+if [[ "$HTTPS_ENABLED" == "true" ]]; then
+  if ! command -v caddy >/dev/null 2>&1; then
+    echo "错误：HTTPS_ENABLED=true，但未找到 Caddy，请先安装 Caddy。" >&2
+    exit 1
+  fi
+  export CADDY_DOMAIN="$PUBLIC_HOST"
+  if [[ "$PUBLIC_HOST" =~ ^[0-9.]+$ || "$PUBLIC_HOST" == "localhost" ]]; then
     CADDY_CONFIG="$ROOT_DIR/Caddyfile.lan.example"
   else
     CADDY_CONFIG="$ROOT_DIR/Caddyfile"
   fi
-  export CADDY_DOMAIN
-  if [[ "${FRONTEND_URL:-}" != https://* || "${FEISHU_REDIRECT_URI:-}" != https://* || "${COOKIE_SECURE:-false}" != "true" ]]; then
-    echo "错误：启用 Caddy HTTPS 时，请在 .env 中配置 FRONTEND_URL、FEISHU_REDIRECT_URI 为 https://，并设置 COOKIE_SECURE=true。" >&2
-    exit 1
-  fi
+  export FRONTEND_URL="https://${PUBLIC_HOST}"
+  export FEISHU_REDIRECT_URI="https://${PUBLIC_HOST}/api/auth/feishu/callback"
+  export COOKIE_SECURE=true
+else
+  export FRONTEND_URL="http://${PUBLIC_HOST}:${PORT:-41873}"
+  export FEISHU_REDIRECT_URI="${FRONTEND_URL}/api/auth/feishu/callback"
+  export COOKIE_SECURE=false
 fi
 
-PORT="${PORT:-41873}"
 LOG_DIR="${LOG_DIR:-$ROOT_DIR/logs}"
 mkdir -p "$LOG_DIR"
 exec > >(tee -a "$LOG_DIR/mcp-oauth.log") 2>&1
@@ -82,7 +83,7 @@ echo "前端地址：${FRONTEND_ADDRESS}"
 echo "MCP 地址：${FRONTEND_ADDRESS}/mcp"
 echo "后端健康检查：${FRONTEND_ADDRESS}/api/health"
 
-if [[ "$CADDY_ENABLED" == "true" ]]; then
+if [[ "$HTTPS_ENABLED" == "true" ]]; then
   caddy validate --config "$CADDY_CONFIG" --adapter caddyfile
   env NODE_ENV=production PORT="$PORT" npm start &
   backend_pid=$!

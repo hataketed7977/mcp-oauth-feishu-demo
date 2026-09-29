@@ -25,9 +25,8 @@ npm run dev
 npm ci
 cp .env.example .env
 # 修改 .env：
-# FRONTEND_URL=http://localhost:41873
-# FEISHU_REDIRECT_URI=http://localhost:41873/api/auth/feishu/callback
-# COOKIE_SECURE=false
+# PUBLIC_HOST=localhost
+# HTTPS_ENABLED=false
 npm run build
 NODE_ENV=production npm start
 ```
@@ -36,16 +35,9 @@ NODE_ENV=production npm start
 
 `http://localhost:41873/api/auth/feishu/callback`
 
-如果需要让其他机器访问，建议给开发机配置一个 HTTPS 域名，并将 `.env` 改为同源地址：
-
-```env
-FRONTEND_URL=https://oauth.example.com
-FEISHU_REDIRECT_URI=https://oauth.example.com/api/auth/feishu/callback
-```
-
-然后用 Caddy、Nginx 或现有网关将 `oauth.example.com` 反向代理到 `127.0.0.1:41873`。OAuth 回调地址必须与飞书后台配置完全一致。
-
-使用 HTTPS 时将 `COOKIE_SECURE` 改为 `true`；通过 HTTP 局域网 IP 做 Demo 测试时保持 `false`。
+如果需要让其他机器访问，使用 `HTTPS_ENABLED=true`，并将 `PUBLIC_HOST`
+设置为解析到开发机的域名或局域网 IP。启动脚本会根据这两个配置自动生成
+前端地址和 OAuth 回调地址。
 
 ### 使用 Caddy 提供 HTTPS
 
@@ -53,7 +45,8 @@ Caddy 配置在 [`Caddyfile`](./Caddyfile)。准备一个解析到开发机的�
 `oauth.example.com`，并确保防火墙允许 TCP `80` 和 `443`。在 `.env` 中配置：
 
 ```env
-CADDY_DOMAIN=oauth.example.com
+PUBLIC_HOST=oauth.example.com
+HTTPS_ENABLED=true
 ```
 
 然后启动：
@@ -80,11 +73,11 @@ https://oauth.example.com/api/auth/feishu/callback
 `tls internal` 证书需要在客户端安装并信任 Caddy 根证书，豆包环境通常不会信任，
 因此公网 HTTPS 域名更适合正式接入。
 
-局域网 IP 测试不需要配置域名，默认使用 `10.37.70.152`：
+局域网 IP 测试只需要配置：
 
 ```env
-CADDY_LAN=true
-CADDY_DOMAIN=10.37.70.152
+PUBLIC_HOST=10.37.70.152
+HTTPS_ENABLED=true
 ```
 
 然后仍然执行：
@@ -96,12 +89,11 @@ sudo ./start.sh
 此时地址为 `https://10.37.70.152/mcp`。`./start.sh` 不会启动 Caddy，
 仍然是本机 HTTP 模式。
 
-也可以省略 `CADDY_DOMAIN`，脚本会默认使用 `10.37.70.152`。只有配置了
-真实域名并将 `CADDY_LAN=false` 时，Caddy 才会使用公网自动证书模式。
+公网域名模式只需要把 `PUBLIC_HOST` 改成域名，并保持 `HTTPS_ENABLED=true`，
+Caddy 会使用公网自动证书模式。
 
-`start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。需要 HTTPS
-时将 `CADDY_ENABLED=true`，同时把 `.env` 中的 `FRONTEND_URL`、
-`FEISHU_REDIRECT_URI` 改成 `https://`，并设置 `COOKIE_SECURE=true`。
+`start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。启用 HTTPS
+时只需要修改 `HTTPS_ENABLED=true` 和 `PUBLIC_HOST`。
 
 也可以直接使用启动脚本：
 
