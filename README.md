@@ -80,6 +80,22 @@ https://oauth.example.com/api/auth/feishu/callback
 `tls internal` 证书需要在客户端安装并信任 Caddy 根证书，豆包环境通常不会信任，
 因此公网 HTTPS 域名更适合正式接入。
 
+局域网 IP 测试可以在 `.env` 中设置：
+
+```env
+CADDY_LAN=true
+CADDY_DOMAIN=10.37.70.152
+```
+
+然后仍然执行：
+
+```bash
+sudo ./start-https.sh
+```
+
+此时地址为 `https://10.37.70.152/mcp`。`./start.sh` 不会启动 Caddy，
+仍然是本机 HTTP 模式。
+
 也可以直接使用启动脚本：
 
 ```bash

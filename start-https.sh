@@ -19,17 +19,23 @@ set -a
 source .env
 set +a
 
-if [[ -z "${CADDY_DOMAIN:-}" ]]; then
-  echo "错误：请在 .env 中配置 CADDY_DOMAIN，例如 oauth.example.com" >&2
-  exit 1
+if [[ "${CADDY_LAN:-false}" == "true" ]]; then
+  caddy_config="$ROOT_DIR/Caddyfile.lan.example"
+  export CADDY_DOMAIN="${CADDY_DOMAIN:-10.37.70.152}"
+else
+  if [[ -z "${CADDY_DOMAIN:-}" ]]; then
+    echo "错误：请在 .env 中配置 CADDY_DOMAIN，例如 oauth.example.com" >&2
+    exit 1
+  fi
+
+  if [[ "${CADDY_DOMAIN}" == *"10.37.70.152"* || "${CADDY_DOMAIN}" == "localhost" ]]; then
+    echo "错误：公网模式的 CADDY_DOMAIN 应该是域名，不要填 IP 或 localhost。" >&2
+    exit 1
+  fi
+  caddy_config="$ROOT_DIR/Caddyfile"
 fi
 
-if [[ "${CADDY_DOMAIN}" == *"10.37.70.152"* || "${CADDY_DOMAIN}" == "localhost" ]]; then
-  echo "错误：CADDY_DOMAIN 应该是解析到本机的域名，不要填 IP 或 localhost。" >&2
-  exit 1
-fi
-
-caddy validate --config "$ROOT_DIR/Caddyfile" --adapter caddyfile
+caddy validate --config "$caddy_config" --adapter caddyfile
 
 START_HTTPS=1 ./start.sh &
 backend_pid=$!
@@ -43,4 +49,4 @@ echo "HTTPS 地址：https://${CADDY_DOMAIN}"
 echo "MCP 地址：https://${CADDY_DOMAIN}/mcp"
 echo "飞书 OAuth 回调：https://${CADDY_DOMAIN}/api/auth/feishu/callback"
 
-caddy run --config "$ROOT_DIR/Caddyfile" --adapter caddyfile
+caddy run --config "$caddy_config" --adapter caddyfile
