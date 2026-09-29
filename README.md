@@ -88,6 +88,8 @@ sudo ./start.sh
 
 此时地址为 `https://10.37.70.152:41872/mcp`。
 
+局域网模式不会监听 `80`，因此不需要使用 `sudo ./start.sh`。
+
 公网域名模式只需要把 `ACCESS_HOST` 改成域名，并保持 `HTTPS_ENABLED=true`，
 Caddy 会使用公网自动证书模式。
 
