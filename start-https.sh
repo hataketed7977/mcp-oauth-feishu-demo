@@ -19,17 +19,12 @@ set -a
 source .env
 set +a
 
-if [[ "${CADDY_LAN:-false}" == "true" ]]; then
+if [[ "${CADDY_LAN:-false}" == "true" || -z "${CADDY_DOMAIN:-}" || "${CADDY_DOMAIN:-}" =~ ^[0-9.]+$ ]]; then
   caddy_config="$ROOT_DIR/Caddyfile.lan.example"
   export CADDY_DOMAIN="${CADDY_DOMAIN:-10.37.70.152}"
 else
-  if [[ -z "${CADDY_DOMAIN:-}" ]]; then
-    echo "错误：请在 .env 中配置 CADDY_DOMAIN，例如 oauth.example.com" >&2
-    exit 1
-  fi
-
-  if [[ "${CADDY_DOMAIN}" == *"10.37.70.152"* || "${CADDY_DOMAIN}" == "localhost" ]]; then
-    echo "错误：公网模式的 CADDY_DOMAIN 应该是域名，不要填 IP 或 localhost。" >&2
+  if [[ "${CADDY_DOMAIN}" == "localhost" ]]; then
+    echo "错误：localhost 不能用于其他设备访问，请使用本机 IP 或真实域名。" >&2
     exit 1
   fi
   caddy_config="$ROOT_DIR/Caddyfile"

@@ -1,6 +1,6 @@
 # 局域网临时测试配置。浏览器和豆包必须信任 Caddy 的内部 CA，
 # 因此推荐正式接入时使用解析到服务器的公网 HTTPS 域名。
-https://10.37.70.152 {
+https://{$CADDY_DOMAIN} {
 	tls internal
 	reverse_proxy 127.0.0.1:41873
 }
