@@ -20,6 +20,25 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+install_caddy() {
+  echo "未找到 Caddy，正在自动安装..."
+  if command -v brew >/dev/null 2>&1; then
+    brew install caddy
+  elif command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo apt-get install -y caddy
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y caddy
+  else
+    echo "错误：无法自动安装 Caddy。请先安装 Homebrew、apt 或 dnf。" >&2
+    exit 1
+  fi
+}
+
+if ! command -v caddy >/dev/null 2>&1; then
+  install_caddy
+fi
+
 set -a
 source .env
 set +a
@@ -29,11 +48,6 @@ FRONTEND_PORT="${FRONTEND_PORT:-41872}"
 export BACKEND_PORT FRONTEND_PORT
 HTTPS_ENABLED="${HTTPS_ENABLED:-false}"
 ACCESS_HOST="${ACCESS_HOST:-localhost}"
-if ! command -v caddy >/dev/null 2>&1; then
-  echo "错误：启动脚本需要 Caddy，请先安装 Caddy。" >&2
-  exit 1
-fi
-
 export CADDY_DOMAIN="$ACCESS_HOST"
 export FRONTEND_PORT
 if [[ "$HTTPS_ENABLED" == "true" ]]; then

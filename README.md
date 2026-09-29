@@ -94,6 +94,8 @@ Caddy 会使用公网自动证书模式。
 `start.sh` 是唯一启动脚本，默认读取 `.env` 并启动本地 HTTP。启用 HTTPS
 时只需要修改 `HTTPS_ENABLED=true` 和 `ACCESS_HOST`。
 
+首次启动时，如果未安装 Caddy，脚本会自动使用 Homebrew、apt 或 dnf 安装。
+
 局域网 HTTPS 使用 `FRONTEND_PORT`，公网域名模式使用标准 HTTPS `443`。
 例如局域网模式：
 
